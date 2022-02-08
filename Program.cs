@@ -24,9 +24,7 @@ namespace BitcoinBot
 
             // Get BTC Price and print to console
             Market market = new Market(baseUrl, apiKey, secretKey);
-
             var priceTickerString = await market.SymbolPriceTicker("BTCUSDT");
-
             PriceTicker? priceTickerObj = JsonSerializer.Deserialize<PriceTicker>(priceTickerString);
 
             if (priceTickerObj?.price != null)
@@ -36,12 +34,18 @@ namespace BitcoinBot
             }
 
 
-            // Check current balance
+            // Check current balances
             var account = new SpotAccountTrade(baseUrl, apiKey, secretKey);
+            var accountInformationString = await account.AccountInformation();
+            AccountInformation? accountInformation = JsonSerializer.Deserialize<AccountInformation>(accountInformationString);
 
-            var result = await account.AccountInformation();
-
-            Console.WriteLine(result);
+            foreach (Balance balance in accountInformation?.balances)
+            {
+                if (balance.asset == "BTC" | balance.asset == "USDT")
+                {
+                    Console.WriteLine(balance.asset + " Balance: " + balance.free);
+                }
+            }
         }
     }
 }
