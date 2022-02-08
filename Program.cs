@@ -2,32 +2,46 @@
 using System.Threading.Tasks;
 using Binance.Spot;
 using System.Text.Json;
-//using BitcoinBot;
+using System.Configuration;
+using Microsoft.Extensions.Configuration;
 
-// See https://aka.ms/new-console-template for more information
-// Console.WriteLine("Hello, World!");
 namespace BitcoinBot
 {
     class Program
     {
         static async Task Main(string[] args)
         {
-            string apiKey = "ZxNHyzK4aOz2lWoyWYFbozgJ3N0GvRr17LPMAimMiv8VRIuSZWImlKlSEEKcChtU";
-            string secretKey = "K3Hupa1kBrUyLgQn2dMpeoZtlQnbtICAZFkEIt8feajb5xLycoODuf4oYRiUQ6U8";
+            var config = new ConfigurationBuilder()
+                .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                .AddUserSecrets<Program>()
+                .Build();
 
-                        
+            string apiKey = config["apiKey"];
+            string secretKey = config["secretKey"];
 
-            Market market = new Market("https://testnet.binance.vision", apiKey, secretKey);
+            string baseUrl = "https://testnet.binance.vision";
+
+
+            // Get BTC Price and print to console
+            Market market = new Market(baseUrl, apiKey, secretKey);
 
             var priceTickerString = await market.SymbolPriceTicker("BTCUSDT");
-
 
             PriceTicker? priceTickerObj = JsonSerializer.Deserialize<PriceTicker>(priceTickerString);
 
             if (priceTickerObj?.price != null)
             {
+                Console.WriteLine("Symbol: " + priceTickerObj.symbol);
                 Console.WriteLine("BTC Price: " + priceTickerObj.price);
             }
+
+
+            // Check current balance
+            var account = new SpotAccountTrade(baseUrl, apiKey, secretKey);
+
+            var result = await account.AccountInformation();
+
+            Console.WriteLine(result);
         }
     }
 }
