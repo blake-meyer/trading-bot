@@ -4,6 +4,8 @@ using Binance.Spot;
 using System.Text.Json;
 using System.Configuration;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Binance.Common;
 
 namespace BitcoinBot
 {
@@ -22,6 +24,7 @@ namespace BitcoinBot
             decimal coreNumber = System.Convert.ToDecimal(config["coreNumber"]);
             decimal marginPercent = System.Convert.ToDecimal(config["marginPercent"]);
             int minutesLoop = System.Convert.ToInt32(config["minutesLoop"]);
+            string binanceUrl = config["binanceUrl"];
 
             while (true)
             {
@@ -29,11 +32,8 @@ namespace BitcoinBot
                 string action = "None";
                 decimal btcPrice = 0;
 
-                string baseUrl = "https://testnet.binance.vision";
-
-
                 // Get BTC Price and print to console
-                Market market = new Market(baseUrl, apiKey, secretKey);
+                Market market = new Market(binanceUrl, apiKey, secretKey);
                 var priceTickerString = await market.SymbolPriceTicker("BTCUSDT");
                 PriceTicker? priceTickerObj = JsonSerializer.Deserialize<PriceTicker>(priceTickerString);
 
@@ -42,9 +42,7 @@ namespace BitcoinBot
                     btcPrice = System.Convert.ToDecimal(priceTickerObj.price);
                 }
 
-
-                // Check current balances
-                var account = new SpotAccountTrade(baseUrl, apiKey, secretKey);
+                var account = new SpotAccountTrade(binanceUrl, apiKey, secretKey);
                 var accountInformationString = await account.AccountInformation();
                 AccountInformation? accountInformation = JsonSerializer.Deserialize<AccountInformation>(accountInformationString);
 
@@ -59,7 +57,7 @@ namespace BitcoinBot
                     {
                         currentBTCHolding = System.Convert.ToDecimal(balance.free) * System.Convert.ToDecimal(priceTickerObj.price);
                         changePercent = (currentBTCHolding - coreNumber) / coreNumber * 100;
-                        tradeAmount = Decimal.Round(Math.Abs(currentBTCHolding - coreNumber), 4);
+                        tradeAmount = Decimal.Round(Math.Abs(currentBTCHolding - coreNumber), 2);
                         btcBalance = System.Convert.ToDecimal(balance.free);
                     }
 
@@ -98,16 +96,14 @@ namespace BitcoinBot
             Console.WriteLine("BTC Price: " + btcPrice);
             Console.WriteLine("BTC Balance: " + btcBalance);
             Console.WriteLine("My Core Number: " + coreNumber);
-            Console.WriteLine("Current BTC Holding: " + currentBTCHolding);
+            Console.WriteLine("Current BTC Holding (USD): " + currentBTCHolding);
             Console.WriteLine("Current USD Holding: " + usdBalance);
-            Console.WriteLine("Total Value Held: " + currentBTCHolding + usdBalance);
+            Console.WriteLine("Total Value Held: " + (currentBTCHolding + usdBalance));
             Console.WriteLine("Change Percent: " + changePercent);
             Console.WriteLine("\n");
             Console.WriteLine("ACTION: " + action);
             Console.WriteLine("\n");
             Console.ResetColor();
-
-            // TODO: Display USD amount held.
         }
     }
 }
